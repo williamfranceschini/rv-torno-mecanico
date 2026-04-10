@@ -1,100 +1,192 @@
 <!DOCTYPE html>
-<html>
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, user-scalable=no, minimum-scale=1.0, maximum-scale=1.0">
-    <title>AR Industrial - Manutenção Torno</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AR Industrial - Manutenção Torno Romi</title>
+    
     <script src="https://aframe.io/releases/1.2.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
-        .font-tech { font-family: 'Share Tech Mono', monospace; }
         
-        /* Estilos do seu Painel Lateral (Mantidos) */
+        body { margin: 0; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        .font-tech { font-family: 'Share Tech Mono', monospace; }
+
+        /* Estilo do Painel Lateral (HUD) */
         #info-panel {
-            position: fixed; right: -400px; top: 0; bottom: 0; width: 350px;
-            background: rgba(5, 10, 15, 0.95); border-left: 2px solid #00f3ff;
-            z-index: 999; transition: right 0.4s; padding: 20px;
+            position: fixed;
+            right: -400px;
+            top: 0;
+            bottom: 0;
+            width: 350px;
+            background: rgba(5, 12, 20, 0.98);
+            border-left: 3px solid #00f3ff;
+            box-shadow: -10px 0 30px rgba(0,0,0,0.8);
+            z-index: 1000;
+            transition: right 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+            color: white;
+            padding: 25px;
+            overflow-y: auto;
         }
+
         #info-panel.open { right: 0; }
-        .ar-button {
-            background: rgba(0, 243, 255, 0.2); border: 1px solid #00f3ff;
-            color: #00f3ff; padding: 5px 10px; border-radius: 4px; cursor: pointer;
+
+        /* Botão de Fechar e Ações */
+        .btn-ui {
+            background: transparent;
+            border: 1px solid #00f3ff;
+            color: #00f3ff;
+            padding: 10px;
+            cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            transition: 0.3s;
         }
+        .btn-ui:hover { background: #00f3ff; color: black; }
+
+        /* Scanline para efeito visual de AR */
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background: rgba(0, 243, 255, 0.2);
+            position: fixed;
+            top: 0;
+            z-index: 999;
+            pointer-events: none;
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan { 0% { top: 0; } 100% { top: 100%; } }
     </style>
 </head>
 
-<body style="margin: 0; overflow: hidden;">
+<body>
+    <div class="scanline"></div>
 
     <div class="fixed top-6 left-6 z-50 font-tech text-xs text-cyan-400 pointer-events-none">
         <div class="flex items-center gap-2 mb-1">
-            <div class="w-3 h-3 bg-cyan-400 rounded-sm animate-pulse"></div>
-            <span class="font-bold tracking-widest">AR_TRACKING: ACTIVE</span>
+            <div class="w-2 h-2 bg-cyan-400 rounded-full animate-ping"></div>
+            <span class="font-bold tracking-widest uppercase">Sistema AR: Rastreando Objeto</span>
         </div>
-        <div class="text-white">SCANNING FOR: TORNO_ROMI_V1</div>
+        <div class="text-white opacity-70">TARGET: TORNO_ROMI_T1</div>
+        <div id="clock" class="text-white mt-1">00:00:00</div>
     </div>
 
-    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false; detectionMode: mono_and_matrix; matrixCodeType: 3x3;">
-        
+    <a-scene 
+        embedded 
+        arjs="sourceType: webcam; debugUIEnabled: false; trackingMethod: best; detectionMode: mono_and_matrix;" 
+        vr-mode-ui="enabled: false"
+        device-orientation-permission-ui="enabled: true">
+
         <a-marker preset="hiro">
             
             <a-entity position="-1 0.5 0" 
-                      geometry="primitive: sphere; radius: 0.1" 
-                      material="color: #00f3ff; emissive: #00f3ff"
-                      onclick="window.parent.openDetails('cabecote_fixo')">
-                <a-text value="OLEO CABECOTE" position="0 0.2 0" align="center" width="2" font="monoid"></a-text>
+                      geometry="primitive: sphere; radius: 0.12" 
+                      material="color: #00f3ff; emissive: #00f3ff; emissiveIntensity: 0.5"
+                      animation="property: scale; to: 1.2 1.2 1.2; dir: alternate; dur: 1000; loop: true"
+                      class="clickable"
+                      onclick="openDetails('cabecote_fixo')">
+                <a-text value="Nivel Oleo" position="0 0.25 0" align="center" width="2.5" font="monoid" color="#00f3ff"></a-text>
             </a-entity>
 
-            <a-entity position="0 0.2 1" 
-                      geometry="primitive: sphere; radius: 0.1" 
-                      material="color: #ffcc00; emissive: #ffcc00"
-                      onclick="window.parent.openDetails('barramento')">
-                <a-text value="GUIAS PRISMA" position="0 0.2 0" align="center" width="2"></a-text>
+            <a-entity position="0 0.3 1" 
+                      geometry="primitive: sphere; radius: 0.12" 
+                      material="color: #facc15; emissive: #facc15; emissiveIntensity: 0.5"
+                      animation="property: scale; to: 1.2 1.2 1.2; dir: alternate; dur: 1200; loop: true"
+                      class="clickable"
+                      onclick="openDetails('barramento')">
+                <a-text value="Lubrificacao" position="0 0.25 0" align="center" width="2.5" font="monoid" color="#facc15"></a-text>
+            </a-entity>
+
+            <a-entity position="1 0.5 0" 
+                      geometry="primitive: sphere; radius: 0.12" 
+                      material="color: #ffffff; emissive: #ffffff; emissiveIntensity: 0.5"
+                      animation="property: scale; to: 1.2 1.2 1.2; dir: alternate; dur: 1500; loop: true"
+                      class="clickable"
+                      onclick="openDetails('cabecote_movel')">
+                <a-text value="Mangote" position="0 0.25 0" align="center" width="2.5" font="monoid" color="#ffffff"></a-text>
             </a-entity>
 
         </a-marker>
 
         <a-entity camera>
-            <a-cursor color="#00f3ff"></a-cursor>
+            <a-cursor fuse="false" raycaster="objects: .clickable" color="#00f3ff"></a-cursor>
         </a-entity>
+
     </a-scene>
 
-    <div id="info-panel" class="font-tech text-white">
-        <h2 id="panel-title" class="text-xl text-cyan-400 mb-4">DETALHES</h2>
-        <div id="panel-content" class="text-sm space-y-4">
-            <p id="panel-lub" class="text-yellow-500"></p>
-            <div id="panel-steps"></div>
+    <div id="info-panel">
+        <div class="border-b border-gray-800 pb-4 mb-4">
+            <h5 class="font-tech text-cyan-400 text-xs mb-1">PROTOCOLO DE MANUTENÇÃO</h5>
+            <h2 id="panel-title" class="text-xl font-bold uppercase">Componente</h2>
         </div>
-        <button onclick="closeDetails()" class="mt-8 w-full ar-button">FECHAR</button>
+
+        <div class="space-y-6">
+            <div class="bg-gray-900/50 p-3 border-l-4 border-yellow-500">
+                <p class="text-[10px] text-gray-400 uppercase font-tech">Lubrificante Recomendo</p>
+                <p id="panel-lub" class="text-sm font-bold text-white">ISO VG 68</p>
+            </div>
+
+            <div>
+                <p class="font-tech text-cyan-400 text-xs mb-3">PROCEDIMENTOS:</p>
+                <div id="panel-steps" class="text-sm text-gray-300 space-y-4">
+                    </div>
+            </div>
+        </div>
+
+        <div class="mt-10">
+            <button onclick="closeDetails()" class="w-full btn-ui font-tech text-sm">Confirmar Ação</button>
+        </div>
     </div>
 
     <script>
+        // Dados do Projeto
         const componentsData = {
             cabecote_fixo: {
                 title: 'Óleo do Cabeçote Fixo',
-                lub: 'Lubrificante: ISO VG 68',
-                steps: ["Verificar nível no visor", "Adicionar via bujão superior"]
+                lub: 'Óleo de Engrenagens ISO 68',
+                steps: ["Verificar nível no visor lateral.", "Completar se abaixo do ponto central.", "Limpar resíduos do bujão."]
             },
             barramento: {
-                title: 'Guias Prisma',
-                lub: 'Lubrificante: Óleo para Guias',
-                steps: ["Limpar cavacos", "Aplicar fina camada de óleo"]
+                title: 'Barramento / Guias',
+                lub: 'Óleo para Guias ISO 68',
+                steps: ["Limpar cavacos metálicos.", "Aplicar filme de óleo nas guias em V.", "Movimentar o carro para distribuir."]
+            },
+            cabecote_movel: {
+                title: 'Mangote e Graxeiras',
+                lub: 'Graxa Lítica / Óleo Fino',
+                steps: ["Estender o mangote totalmente.", "Lubrificar pontos de esfera (2 gotas).", "Limpar ponta rotativa."]
             }
         };
 
+        // Lógica da Interface
         function openDetails(key) {
             const data = componentsData[key];
             document.getElementById('panel-title').innerText = data.title;
             document.getElementById('panel-lub').innerText = data.lub;
-            document.getElementById('panel-steps').innerHTML = data.steps.map(s => `• ${s}<br>`).join('');
+            
+            const stepsHtml = data.steps.map((step, index) => `
+                <div class="flex gap-3">
+                    <span class="text-cyan-400 font-tech">${index+1}.</span>
+                    <p>${step}</p>
+                </div>
+            `).join('');
+            
+            document.getElementById('panel-steps').innerHTML = stepsHtml;
             document.getElementById('info-panel').classList.add('open');
         }
 
         function closeDetails() {
             document.getElementById('info-panel').classList.remove('open');
         }
+
+        // Relógio HUD
+        setInterval(() => {
+            const now = new Date();
+            document.getElementById('clock').innerText = now.toTimeString().split(' ')[0];
+        }, 1000);
     </script>
 </body>
 </html>
